@@ -90,6 +90,17 @@ class Chef
           exit 1
         end
       end
+      
+      def color_state(state)
+        case state
+        when 'shutting-down','terminated','stopping','stopped'
+          ui.color(state, :red)
+        when 'pending'
+          ui.color(state, :yellow)
+        else
+          ui.color(state, :green)
+        end
+      end
 
     end
   end

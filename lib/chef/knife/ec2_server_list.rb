@@ -52,17 +52,7 @@ class Chef
           server_list << server.key_name.to_s
           server_list << server.groups[0]
           server_list << server.groups[1]
-          server_list << begin
-            state = server.state.to_s.downcase
-            case state
-            when 'shutting-down','terminated','stopping','stopped'
-              ui.color(state, :red)
-            when 'pending'
-              ui.color(state, :yellow)
-            else
-              ui.color(state, :green)
-            end
-          end
+          server_list << color_state(server.state.to_s.downcase)
         end
         puts ui.list(server_list, :columns_across, 9)
 
