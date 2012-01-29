@@ -54,6 +54,8 @@ class Chef
           server_list << server.groups[1]
           server_list << color_state(server.state.to_s.downcase)
         end
+        
+        puts "Listing instances in region #{locate_config_value(:region)}"
         puts ui.list(server_list, :columns_across, 9)
 
       end
