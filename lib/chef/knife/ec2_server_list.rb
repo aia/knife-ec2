@@ -1,6 +1,7 @@
 #
 # Author:: Adam Jacob (<adam@opscode.com>)
 # Author:: Seth Chisamore (<schisamo@opscode.com>)
+# Author:: Artem Veremey (<artem@veremey.net>)
 # Copyright:: Copyright (c) 2010-2011 Opscode, Inc.
 # License:: Apache License, Version 2.0
 #
@@ -51,7 +52,7 @@ class Chef
         regions.each do |region|
           server_list = list_servers(region)
 
-          puts "Listing instances in region #{region}"
+          puts "Listing servers in region #{region}"
           puts ui.list(server_list, :columns_across, 9)
         end
 
