@@ -54,12 +54,12 @@ class Chef
         end
       end
 
-      def connection
-        @connection ||= Fog::Compute.new(
+      def connection(region = nil)
+        @connection = Fog::Compute.new(
           :provider => 'AWS',
           :aws_access_key_id => locate_config_value(:aws_access_key_id),
           :aws_secret_access_key => locate_config_value(:aws_secret_access_key),
-          :region => locate_config_value(:region)
+          :region => region.nil? ? locate_config_value(:region) : region
         )
       end
 

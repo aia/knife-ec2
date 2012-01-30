@@ -26,12 +26,38 @@ class Chef
       include Knife::Ec2Base
 
       banner "knife ec2 server list (options)"
+      
+      option :allregions,
+        :short => "--all",
+        :long => "--all-regions",
+        :boolean => true,
+        :description => "List servers in all regions",
+        :proc => Proc.new { |f| Chef::Config[:knife][:allregions] = f }
 
       def run
         $stdout.sync = true
 
         validate!
+        
+        regions = []
+        if Chef::Config[:knife][:allregions]
+          connection.describe_regions.body["regionInfo"].each do |region|
+            regions << region["regionName"]
+          end
+        else
+          regions << locate_config_value(:region)
+        end
 
+        regions.each do |region|
+          server_list = list_servers(region)
+
+          puts "Listing instances in region #{region}"
+          puts ui.list(server_list, :columns_across, 9)
+        end
+
+      end
+      
+      def list_servers(region = nil)
         server_list = [
           ui.color('Instance ID', :bold),
           ui.color('Public IP', :bold),
@@ -43,7 +69,7 @@ class Chef
           ui.color('Sec Name', :bold),
           ui.color('State', :bold)
         ]
-        connection.servers.all.each do |server|
+        connection(region).servers.all.each do |server|
           server_list << server.id.to_s
           server_list << server.public_ip_address.to_s
           server_list << server.private_ip_address.to_s
@@ -55,9 +81,7 @@ class Chef
           server_list << color_state(server.state.to_s.downcase)
         end
         
-        puts "Listing instances in region #{locate_config_value(:region)}"
-        puts ui.list(server_list, :columns_across, 9)
-
+        return server_list
       end
     end
   end
