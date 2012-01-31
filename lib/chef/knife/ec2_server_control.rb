@@ -64,13 +64,13 @@ class Chef
           exit 0
         end
         
-        res = result.body["instancesSet"].first        
+        res = result.body["instancesSet"].first
         
         msg = []
         msg << "Instance #{Chef::Config[:knife][:instance]} previous state "
-        msg << color_state(res["previousState"]["name"])
+        msg << color_state(:server, res["previousState"]["name"])
         msg << "Instance #{Chef::Config[:knife][:instance]} current state "
-        msg << color_state(res["currentState"]["name"])
+        msg << color_state(:server, res["currentState"]["name"])
         
         puts ui.list(msg, :columns_across, 2)
       end
