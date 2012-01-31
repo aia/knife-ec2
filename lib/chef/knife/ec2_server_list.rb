@@ -19,6 +19,7 @@
 #
 
 require 'chef/knife/ec2_base'
+require 'active_support/inflector'
 
 class Chef
   class Knife
@@ -34,11 +35,22 @@ class Chef
         :boolean => true,
         :description => "List servers in all regions",
         :proc => Proc.new { |f| Chef::Config[:knife][:allregions] = f }
+        
+       option :instance,
+          :instance => "-i INSTANCE_ID",
+          :long => "--instance INSTANCE_ID",
+          :description => "Optional instance id",
+          :proc => Proc.new { |f| Chef::Config[:knife][:instance] = f }
 
       def run
         $stdout.sync = true
 
         validate!
+        
+        if Chef::Config[:knife][:instance]
+          list_server(Chef::Config[:knife][:instance])
+          exit
+        end
         
         regions = []
         if Chef::Config[:knife][:allregions]
@@ -52,40 +64,45 @@ class Chef
         regions.each do |region|
           server_list = list_servers(region)
 
-          puts "Listing servers in region #{region}"
-          puts ui.list(server_list, :columns_across, 9)
+          puts "Listing instances in region #{region}"
+          puts ui.list(server_list, :uneven_columns_across, 10)
         end
 
       end
       
       def list_servers(region = nil)
-        server_list = [
-          ui.color('Instance ID', :bold),
-          ui.color('Public IP', :bold),
-          ui.color('Private IP', :bold),
-          ui.color('Flavor', :bold),
-          ui.color('Image', :bold),
-          ui.color('SSH Key', :bold),
-          ui.color('Sec ID', :bold),
-          ui.color('Sec Name', :bold),
-          ui.color('State', :bold)
-        ]
+        server_list = ["Instance ID", "Name", "Zone", "Public IP", "Private IP",
+          "Flavor", "Image", "SSH Key", "Sec Group", "State"]
+        
+        server_list.map!{ |f| ui.color(f, :bold) }
+        
         connection(region).servers.all.each do |server|
           server_list << server.id.to_s
+          server_list << server.tags["Name"].to_s
+          server_list << server.availability_zone.to_s
           server_list << server.public_ip_address.to_s
           server_list << server.private_ip_address.to_s
           server_list << server.flavor_id.to_s
           server_list << server.image_id.to_s
           server_list << server.key_name.to_s
-          server_list << server.groups[0]
-          server_list << server.groups[1]
-          server_list << color_state(server.state.to_s.downcase)
+          server_list << "[#{server.groups.values_at(* server.groups.each_index.select {|i| i.odd?}).join(', ')}]"
+          server_list << color_state(:server, server.state.to_s.downcase)
         end
         
         return server_list
       end
+      
+      def list_server(instance)
+        table = []
+        result = connection.servers.get(instance).inspect
+        result.split("\n")[1..-2].each do |line|
+          match = /(?<key>.+?)=(?<value>.+)/.match(line)
+          table << ui.color(match[:key].gsub(/\s+/, "").titleize, :cyan) << match[:value].gsub(/,$/, "")
+        end
+        
+        puts ui.list(table, :uneven_columns_across, 2)
+      end
     end
   end
 end
-
 

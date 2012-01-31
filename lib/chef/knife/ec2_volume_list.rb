@@ -17,6 +17,7 @@
 #
 
 require 'chef/knife/ec2_base'
+require 'active_support/inflector'
 
 class Chef
   class Knife
@@ -33,10 +34,21 @@ class Chef
         :description => "List servers in all regions",
         :proc => Proc.new { |f| Chef::Config[:knife][:allregions] = f }
 
+      option :instance,
+         :instance => "-i INSTANCE_ID",
+         :long => "--instance INSTANCE_ID",
+         :description => "Optional instance id",
+         :proc => Proc.new { |f| Chef::Config[:knife][:instance] = f }
+
       def run
         $stdout.sync = true
 
         validate!
+        
+        if Chef::Config[:knife][:instance]
+          list_volume(Chef::Config[:knife][:instance])
+          exit
+        end
         
         regions = []
         if Chef::Config[:knife][:allregions]
@@ -51,13 +63,12 @@ class Chef
           volume_list = list_volumes(region)
 
           puts "Listing volumes in region #{region}"
-          puts ui.list(volume_list, :columns_across, 6)
+          puts ui.list(volume_list, :uneven_columns_across, 6)
         end
 
       end
       
       def list_volumes(region = nil)
-        #volume_list = ["Id", "Name", "Description", "Progress", "State", "Created"]
         volume_list = ["ID", "Zone", "Size", "Server ID", "Created", "State"]
         volume_list.map!{ |f| ui.color(f, :bold) }
         connection(region).volumes.all.each do |volume|
@@ -66,10 +77,21 @@ class Chef
           volume_list << [volume.size.to_s, "G"].join
           volume_list << volume.server_id.to_s
           volume_list << volume.created_at.to_s
-          volume_list << volume.state.to_s
+          volume_list << color_state(:volume, volume.state.to_s)
         end
         
         return volume_list
+      end
+      
+      def list_volume(instance)
+        table = []
+        result = connection.volumes.get(instance).inspect
+        result.split("\n")[1..-2].each do |line|
+          match = /(?<key>.+?)=(?<value>.+)/.match(line)
+          table << ui.color(match[:key].gsub(/\s+/, "").titleize, :cyan) << match[:value].gsub(/,$/, "")
+        end
+        
+        puts ui.list(table, :uneven_columns_across, 2)
       end
     end
   end

@@ -17,6 +17,7 @@
 #
 
 require 'chef/knife/ec2_base'
+require 'active_support/inflector'
 
 class Chef
   class Knife
@@ -33,10 +34,21 @@ class Chef
         :description => "List servers in all regions",
         :proc => Proc.new { |f| Chef::Config[:knife][:allregions] = f }
 
+      option :instance,
+         :instance => "-i INSTANCE_ID",
+         :long => "--instance INSTANCE_ID",
+         :description => "Optional instance id",
+         :proc => Proc.new { |f| Chef::Config[:knife][:instance] = f }
+
       def run
         $stdout.sync = true
 
         validate!
+        
+        if Chef::Config[:knife][:instance]
+          list_snapshot(Chef::Config[:knife][:instance])
+          exit
+        end
         
         regions = []
         if Chef::Config[:knife][:allregions]
@@ -51,26 +63,39 @@ class Chef
           snapshot_list = list_snapshots(region)
 
           puts "Listing snapshots in region #{region}"
-          puts ui.list(snapshot_list, :columns_across, 7)
+          puts ui.list(snapshot_list, :uneven_columns_across, 8)
         end
 
       end
       
       def list_snapshots(region = nil)
-        snapshot_list = ["ID", "Volume ID", "Name", "Size", "Description", "Created", "State"]
+        snapshot_list = ["ID", "Volume ID", "Name", "Size", "Description", "Created", "Progress", "State"]
         snapshot_list.map!{ |f| ui.color(f, :bold) }
         connection(region).snapshots.all.each do |snapshot|
           snapshot_list << snapshot.id.to_s
           snapshot_list << snapshot.volume_id.to_s
           snapshot_list << snapshot.tags["Name"].to_s
-          snapshot_list << [snapshot.volume_size.to_s, "G"].join
+          snapshot_list << "#{snapshot.volume_size.to_s}G"
           snapshot_list << snapshot.description.to_s
           snapshot_list << snapshot.created_at.to_s
-          snapshot_list << "#{snapshot.state.to_s}(#{snapshot.progress.to_s})"
+          snapshot_list << snapshot.progress.to_s
+          snapshot_list << color_state(:snapshot, snapshot.state.to_s)
         end
         
         return snapshot_list
       end
+      
+      def list_snapshot(instance)
+        table = []
+        result = connection.snapshots.get(instance).inspect
+        result.split("\n")[1..-2].each do |line|
+          match = /(?<key>.+?)=(?<value>.+)/.match(line)
+          table << ui.color(match[:key].gsub(/\s+/, "").titleize, :cyan) << match[:value].gsub(/,$/, "")
+        end
+        
+        puts ui.list(table, :uneven_columns_across, 2)
+      end
+      
     end
   end
 end
