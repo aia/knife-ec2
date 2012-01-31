@@ -100,14 +100,34 @@ class Chef
         # end
       end
       
-      def color_state(state)
-        case state
-        when 'shutting-down','terminated','stopping','stopped'
+      def color_state(object, state)
+        object_state_color = {
+          :volume => {
+            "creating" => :yellow,
+            "available" => :green,
+            "in-use" => :green,
+            "deleting" => :red,
+            "deleting" => :red,
+            "error" => :red
+          },
+          :snapshot => {
+            "pending" => :yellow,
+            "completed"  => :green,
+            "error" => :red
+          },
+          :server => {
+            "pending" => :yellow,
+            "running" => :green,
+            "shutting-down" => :red,
+            "terminated" => :red,
+            "stopping" => :red,
+            "stopped" => :red
+          }
+        }
+        if object_state_color[object][state].nil? 
           ui.color(state, :red)
-        when 'pending'
-          ui.color(state, :yellow)
         else
-          ui.color(state, :green)
+          ui.color(state, object_state_color[object][state])
         end
       end
 
