@@ -130,7 +130,24 @@ class Chef
           ui.color(state, object_state_color[object][state])
         end
       end
-
+      
+      def list_instance(instance)
+        table = []
+        result = instance.inspect
+        result.split("\n")[1..-2].each do |line|
+          match = /(?<key>.+?)=(?<value>.+)/.match(line)
+          if match[:value].gsub(/,$/, "").length < 100
+            table << ui.color(match[:key].gsub(/\s+/, "").titleize, :cyan) << match[:value].gsub(/,$/, "")
+          else
+            table << ui.color(match[:key].gsub(/\s+/, "").titleize, :cyan) << ":"
+            puts ui.list(table, :uneven_columns_across, 2)
+            table = []
+            puts match[:value]
+          end
+        end
+        
+        puts ui.list(table, :uneven_columns_across, 2)
+      end
     end
   end
 end

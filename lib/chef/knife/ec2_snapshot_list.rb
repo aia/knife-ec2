@@ -46,7 +46,7 @@ class Chef
         validate!
         
         if Chef::Config[:knife][:instance]
-          list_snapshot(Chef::Config[:knife][:instance])
+          list_instance(connection.snapshots.get(Chef::Config[:knife][:instance]))
           exit
         end
         
@@ -84,18 +84,6 @@ class Chef
         
         return snapshot_list
       end
-      
-      def list_snapshot(instance)
-        table = []
-        result = connection.snapshots.get(instance).inspect
-        result.split("\n")[1..-2].each do |line|
-          match = /(?<key>.+?)=(?<value>.+)/.match(line)
-          table << ui.color(match[:key].gsub(/\s+/, "").titleize, :cyan) << match[:value].gsub(/,$/, "")
-        end
-        
-        puts ui.list(table, :uneven_columns_across, 2)
-      end
-      
     end
   end
 end
