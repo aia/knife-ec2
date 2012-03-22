@@ -41,14 +41,14 @@ class Chef
         :short => "-f FLAVOR",
         :long => "--flavor FLAVOR",
         :description => "The flavor of server (m1.small, m1.medium, etc)",
-        :proc => Proc.new { |f| Chef::Config[:knife][:flavor] = f },
+        :proc => Proc.new { |f| Chef::Config[:knife][:aws_flavor] = f },
         :default => "m1.small"
 
       option :image,
         :short => "-I IMAGE",
         :long => "--image IMAGE",
         :description => "The AMI for the server",
-        :proc => Proc.new { |i| Chef::Config[:knife][:image] = i }
+        :proc => Proc.new { |i| Chef::Config[:knife][:aws_image] = i }
 
       option :security_groups,
         :short => "-G X,Y,Z",
@@ -62,7 +62,7 @@ class Chef
         :long => "--availability-zone ZONE",
         :description => "The Availability Zone",
         :default => "us-east-1b",
-        :proc => Proc.new { |key| Chef::Config[:knife][:availability_zone] = key }
+        :proc => Proc.new { |key| Chef::Config[:knife][:aws_availability_zone] = key }
 
       option :chef_node_name,
         :short => "-N NAME",
