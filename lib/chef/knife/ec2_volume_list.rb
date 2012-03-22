@@ -56,7 +56,7 @@ class Chef
             regions << region["regionName"]
           end
         else
-          regions << locate_config_value(:region)
+          regions << locate_config_value(:aws_region)
         end
 
         regions.each do |region|
