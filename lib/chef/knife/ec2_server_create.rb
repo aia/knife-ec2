@@ -214,6 +214,8 @@ class Chef
           sleep @initial_sleep_delay ||= (vpc_mode? ? 40 : 10)
           puts("done")
         }
+        
+        return if config[:chef_node_name].nil?
 
         bootstrap_for_node(server,fqdn).run
 
