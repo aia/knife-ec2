@@ -85,7 +85,7 @@ class Chef
           server_list << server.flavor_id.to_s
           server_list << server.image_id.to_s
           server_list << server.key_name.to_s
-          server_list << "[#{server.groups.values_at(* server.groups.each_index.select {|i| i.odd?}).join(', ')}]"
+          server_list << "[#{server.groups.join(", ")}]"
           server_list << color_state(:server, server.state.to_s.downcase)
         end
         
